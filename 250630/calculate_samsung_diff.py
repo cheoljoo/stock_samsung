@@ -100,9 +100,9 @@ for date_str in sorted(ltd_price_data.keys()):
                 changed_total_dividend += current_pref_count * pref_dividend_data[date_str]
                 # buy_and_hold는 삼성전자 보통주만 가지고 있으므로 우선주 배당은 계산하지 않음
 
-            # total_value 계산
-            changed_total_value = (current_ltd_count * ltd_close) + (current_pref_count * pref_close) + current_balanced
-            buy_and_hold_total_value = 1000 * ltd_close # buy_and_hold는 항상 삼성전자 보통주 1000주로 가정
+            # total_value 계산 (배당금 포함)
+            changed_total_value = (current_ltd_count * ltd_close) + (current_pref_count * pref_close) + current_balanced + changed_total_dividend
+            buy_and_hold_total_value = (1000 * ltd_close) + buy_and_hold_total_dividend # buy_and_hold는 항상 삼성전자 보통주 1000주로 가정
 
             diff_data[date_str] = {
                 'diff': diff,

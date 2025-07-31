@@ -4,9 +4,25 @@ import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime, timedelta
+import platform
+import matplotlib.font_manager as fm
 
-# matplotlib에서 한글 폰트 설정 (Windows 환경)
-plt.rcParams['font.family'] = 'Malgun Gothic'
+# OS에 맞게 한글 폰트 설정
+system_name = platform.system()
+if system_name == 'Windows':
+    plt.rcParams['font.family'] = 'Malgun Gothic'
+elif system_name == 'Darwin': # Mac OS
+    plt.rcParams['font.family'] = 'AppleGothic'
+elif system_name == 'Linux':
+    # 나눔고딕 폰트가 있는지 확인
+    if fm.findfont('NanumGothic', fontext='ttf'):
+        plt.rcParams['font.family'] = 'NanumGothic'
+    else:
+        print("나눔고딕 폰트가 설치되어 있지 않습니다. 'sudo apt-get install fonts-nanum*'으로 설치할 수 있습니다.")
+        # 설치되어 있지 않으면 다른 사용 가능한 폰트를 사���하거나, 경고 메시지를 출력합니다.
+        # 여기서는 sans-serif를 기본값으로 사용합니다.
+        plt.rcParams['font.family'] = 'sans-serif'
+
 plt.rcParams['axes.unicode_minus'] = False # 마이너스 폰트 깨짐 방지
 
 def get_stock_data_with_diff_and_dividends(ticker1, ticker2, start_date, end_date, external_dividends=None):
