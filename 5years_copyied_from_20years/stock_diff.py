@@ -154,11 +154,11 @@ if __name__ == "__main__":
     samsung_elec_ticker = '005930.KS'
     samsung_elec_pref_ticker = '005935.KS'
 
-    # 데이터 조회 기간 설정 (오늘 날짜 기준 20년 전부터 오늘까지)
+    # 데이터 조회 기간 설정 (2020년 1월 1일부터 오늘까지)
     today = datetime.now()
-    twenty_years_ago = today - timedelta(days=20*365)
+    start_date_fixed = datetime(2020, 1, 1)
     
-    start_date = twenty_years_ago.strftime('%Y-%m-%d')
+    start_date = start_date_fixed.strftime('%Y-%m-%d')
     end_date = today.strftime('%Y-%m-%d')
 
     print(f"{start_date}부터 {end_date}까지 삼성전자와 삼성전자(우)의 일별 가격 차이 계산 중...")

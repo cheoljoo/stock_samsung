@@ -459,7 +459,7 @@ if __name__ == "__main__":
     json_file = r'./samsung_stock_analysis.json'
     initial_stock = '삼성전자'
     initial_shares = 1000
-    start_date_backtest = '05-01-03' # 2022년 1월 첫 거래일
+    start_date_backtest = '20-01-02' # 2020년 1월 2일 (1월 1일이 휴일이므로 첫 거래일)
 
     run_backtest(json_file, initial_stock, initial_shares, start_date_backtest)
 
