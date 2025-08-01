@@ -1,7 +1,11 @@
 # stock_samsung
 삼성전자와 삼성전자(우)의 비교 : 언제 어떤 것을 사야 유리한지?
 
-# 작업 순서
+# How to Run
+- cd years_with_window_size
+- make
+
+# 개발 순서
 - old directory : 20년치 backtest
 - 250630 directory : 5년치 backtest
 - 5years : 5년치 backtest 
