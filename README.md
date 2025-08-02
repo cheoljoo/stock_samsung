@@ -35,10 +35,49 @@ brew install font-nanum-gothic font-nanum-myeongjo
 ```
 
 ## Running the Analysis
+
+### Option 1: Direct Installation
 - cd many_company_effective_years_with_window_size
 - make
 - if you want run in interactive mode ,
   - make interactive
+
+### Option 2: Using Docker (Recommended)
+```bash
+# Build Docker image with your user permissions
+./docker-run.sh build
+
+# Run analysis in specific directory
+./docker-run.sh run many_company_effective_years_with_window_size
+
+# Run US preferred stock analysis
+./docker-run.sh run many_company_effective_years_with_window_size
+# Then inside container: uv run python us_diff.py --analyze
+
+# Execute additional commands in running container
+./docker-run.sh exec
+
+# Stop container
+./docker-run.sh stop
+
+# Clean up Docker resources
+./docker-run.sh clean
+```
+
+#### Docker Usage Examples:
+```bash
+# Korean stock analysis
+./docker-run.sh run many_company_effective_years_with_window_size
+# Inside container: make interactive
+
+# US preferred stock analysis  
+./docker-run.sh run many_company_effective_years_with_window_size
+# Inside container: uv run python us_diff.py --analyze
+
+# Run specific company analysis
+./docker-run.sh run many_company_effective_years_with_window_size
+# Inside container: uv run python stock_diff.py --company "삼성전자"
+```
 
 ## 분석 결과 해석 가이드
 
