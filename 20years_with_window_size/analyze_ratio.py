@@ -4,23 +4,65 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import platform
 import matplotlib.font_manager as fm
+import warnings
 
-# OS에 맞게 한글 폰트 설정
-system_name = platform.system()
-if system_name == 'Windows':
-    plt.rcParams['font.family'] = 'Malgun Gothic'
-elif system_name == 'Darwin': # Mac OS
-    plt.rcParams['font.family'] = 'AppleGothic'
-elif system_name == 'Linux':
-    # 나눔고딕 폰트가 있는지 확인
-    if fm.findfont('NanumGothic', fontext='ttf'):
-        plt.rcParams['font.family'] = 'NanumGothic'
+# 한글 폰트 설정 함수
+def setup_korean_font():
+    """
+    한글 폰트를 안정적으로 설정하는 함수
+    """
+    # matplotlib 폰트 관련 경고 메시지 억제
+    warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
+    warnings.filterwarnings("ignore", message="Glyph*missing from font*")
+    warnings.filterwarnings("ignore", message="findfont: Font family*not found*")
+    
+    # 시스템에 설치된 모든 폰트 목록 확인
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    
+    # 한글 폰트 후보들 (우선순위 순)
+    korean_font_candidates = [
+        'NanumGothic',
+        'NanumBarunGothic',
+        'NanumMyeongjo', 
+        'Nanum Gothic',
+        'Malgun Gothic',  # Windows
+        'AppleGothic',    # macOS
+        'DejaVu Sans'     # 마지막 대안
+    ]
+    
+    selected_font = None
+    
+    # 사용 가능한 폰트 찾기
+    for candidate in korean_font_candidates:
+        if candidate in available_fonts:
+            selected_font = candidate
+            break
+        
+        # 대소문자 구분 없이 부분 매칭
+        for font in available_fonts:
+            if candidate.lower() in font.lower() or font.lower() in candidate.lower():
+                selected_font = font
+                break
+        
+        if selected_font:
+            break
+    
+    # 폰트 설정 적용
+    if selected_font and 'DejaVu' not in selected_font:
+        plt.rcParams['font.family'] = selected_font
+        print(f"한글 폰트 설정 완료: {selected_font}")
     else:
-        print("나눔고딕 폰트가 설치되어 있지 않습니다. 'sudo apt-get install fonts-nanum*'으로 설치할 수 있습니다.")
-        # 설치되어 있지 않으면 다른 사용 가능한 폰트를 사���하거나, 경고 메시지를 출력합니다.
-        # 여기서는 sans-serif를 기본값으로 사용합니다.
-        plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['axes.unicode_minus'] = False # 마이너스 폰트 깨짐 방지
+        # 한글 폰트를 찾지 못한 경우 DejaVu Sans 사용
+        plt.rcParams['font.family'] = 'DejaVu Sans'
+        print("한글 폰트를 찾을 수 없어 DejaVu Sans를 사용합니다. 한글이 제대로 표시되지 않을 수 있습니다.")
+    
+    # 마이너스 기호 깨짐 방지
+    plt.rcParams['axes.unicode_minus'] = False
+    
+    return selected_font
+
+# 폰트 설정 실행
+setup_korean_font()
 
 def analyze_price_diff_ratio(json_file_path):
     """

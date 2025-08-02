@@ -1,6 +1,6 @@
 # Makefile for running Python scripts with uv
 
-.PHONY: all interactive run-stock-diff run-analyze-ratio run-analyze-all run-backtest-strategy run-get-ltd-dividend run-comprehensive-report run-dividend-compare clean help
+.PHONY: all interactive run-stock-diff run-analyze-ratio run-analyze-all run-backtest-strategy run-get-ltd-dividend run-comprehensive-report run-dividend-compare pdf clean clean-pdf help
 
 # Default target: run all companies analysis
 all: run-full-pipeline-all
@@ -160,6 +160,26 @@ run-get-ltd-dividend:
 	@echo "💰 Running get_samsung_ltd_dividend.py..."
 	uv run python get_samsung_ltd_dividend.py
 
+# === 문서 변환 ===
+
+# Convert all markdown files to PDF
+pdf:
+	@echo "📄 Converting all markdown files to PDF..."
+	@if ! command -v pandoc >/dev/null 2>&1; then \
+		echo "⚠️  pandoc이 설치되지 않았습니다. 설치 중..."; \
+		sudo apt-get update && sudo apt-get install -y pandoc wkhtmltopdf; \
+	fi
+	@if ls *.md >/dev/null 2>&1; then \
+		for file in *.md; do \
+			echo "📄 Converting $$file to PDF..."; \
+			pandoc "$$file" -o "$${file%.md}.pdf" --pdf-engine=wkhtmltopdf --variable mainfont="DejaVu Sans" --variable CJKmainfont="NanumGothic"; \
+		done; \
+		echo "✅ PDF 변환 완료!"; \
+		ls -la *.pdf; \
+	else \
+		echo "❌ 변환할 markdown 파일이 없습니다."; \
+	fi
+
 # === 정리 작업 ===
 
 # Clean up generated files
@@ -169,6 +189,7 @@ clean:
 	rm -f *_dividend_data.json
 	rm -f *.png
 	rm -f *.md
+	rm -f *.pdf
 	rm -f samsung_stock_analysis.json
 	rm -f samsung_ltd_dividends.json
 
@@ -183,6 +204,11 @@ clean-data:
 	rm -f *_stock_analysis_*.json
 	rm -f *_dividend_data.json
 	rm -f *.md
+
+# Clean only PDF files
+clean-pdf:
+	@echo "🧹 Cleaning up PDF files..."
+	rm -f *.pdf
 
 # === 도움말 ===
 
@@ -222,10 +248,14 @@ help:
 	@echo "  make run-full-pipeline-company COMPANY=회사명  - 특정 회사 전체 분석"
 	@echo "  make run-full-pipeline-all              - 모든 회사 전체 분석"
 	@echo ""
+	@echo "📄 문서 변환:"
+	@echo "  make pdf                                - 모든 markdown 파일을 PDF로 변환"
+	@echo ""
 	@echo "🧹 정리:"
 	@echo "  make clean                              - 모든 생성 파일 삭제"
 	@echo "  make clean-charts                       - 차트 파일만 삭제"
 	@echo "  make clean-data                         - 데이터 파일만 삭제"
+	@echo "  make clean-pdf                          - PDF 파일만 삭제"
 	@echo ""
 	@echo "예시:"
 	@echo "  make                                    # 모든 회사 자동 분석"
@@ -235,3 +265,4 @@ help:
 	@echo "  make run-analyze-company-period COMPANY=현대자동차 PERIOD=10년"
 	@echo "  make run-dividend-compare-company COMPANY=현대자동차"
 	@echo "  make run-comprehensive-report           # 종합 리포트 생성"
+ 	@echo "  make pdf                                # markdown 파일을 PDF로 변환"

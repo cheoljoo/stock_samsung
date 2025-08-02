@@ -4,23 +4,35 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import platform
 import matplotlib.font_manager as fm
+import warnings
 
-# OS에 맞게 한글 폰트 설정
-system_name = platform.system()
-if system_name == 'Windows':
-    plt.rcParams['font.family'] = 'Malgun Gothic'
-elif system_name == 'Darwin': # Mac OS
-    plt.rcParams['font.family'] = 'AppleGothic'
-elif system_name == 'Linux':
-    # 나눔고딕 폰트가 있는지 확인
-    if fm.findfont('NanumGothic', fontext='ttf'):
-        plt.rcParams['font.family'] = 'NanumGothic'
-    else:
-        print("나눔고딕 폰트가 설치되어 있지 않습니다. 'sudo apt-get install fonts-nanum*'으로 설치할 수 있습니다.")
-        # 설치되어 있지 않으면 다른 사용 가능한 폰트를 사���하거나, 경고 메시지를 출력합니다.
-        # 여기서는 sans-serif를 기본값으로 사용합니다.
-        plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['axes.unicode_minus'] = False # 마이너스 폰트 깨짐 방지
+# 한글 폰트 설정 함수
+def setup_korean_font():
+    """
+    한글 폰트를 안정적으로 설정하는 함수
+    """
+    # matplotlib 폰트 관련 경고 메시지 억제
+    warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
+    warnings.filterwarnings("ignore", message="Glyph*missing from font*")
+    warnings.filterwarnings("ignore", message="findfont: Font family*not found*")
+    
+    # 한글 폰트 직접 설정 (우선순위 순)
+    korean_fonts = [
+        'NanumGothic',
+        'NanumBarunGothic', 
+        'NanumMyeongjo',
+        'DejaVu Sans'
+    ]
+    
+    # 폰트 설정
+    plt.rcParams['font.family'] = korean_fonts
+    plt.rcParams['axes.unicode_minus'] = False
+    
+    print(f"폰트 설정 완료: {korean_fonts[0]} (fallback: {korean_fonts[1:]})")
+    return True
+
+# 폰트 설정 실행
+setup_korean_font()
 
 def analyze_price_diff_ratio(json_file_path):
     """
