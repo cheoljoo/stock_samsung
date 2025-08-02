@@ -92,12 +92,12 @@ list-companies:
 # Run analyze_ratio.py for detailed analysis (기본: 모든 회사)
 run-analyze-ratio:
 	@echo "📊 Running detailed analysis with analyze_ratio.py..."
-	uv run python analyze_ratio.py --all-periods
+	uv run python analyze_ratio.py
 
 # Run analyze_ratio.py for specific company (usage: make run-analyze-ratio-company COMPANY=LG화학)
 run-analyze-ratio-company:
 	@echo "🎯 Running detailed analysis for $(COMPANY)..."
-	uv run python analyze_ratio.py --company "$(COMPANY)" --all-periods
+	uv run python analyze_ratio.py --company "$(COMPANY)"
 
 # Run analyze_ratio.py for single period (usage: make run-analyze-single-period PERIOD=20년)
 run-analyze-single-period:
