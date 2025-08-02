@@ -265,4 +265,4 @@ help:
 	@echo "  make run-analyze-company-period COMPANY=현대자동차 PERIOD=10년"
 	@echo "  make run-dividend-compare-company COMPANY=현대자동차"
 	@echo "  make run-comprehensive-report           # 종합 리포트 생성"
- 	@echo "  make pdf                                # markdown 파일을 PDF로 변환"
+	@echo "  make pdf                                # markdown 파일을 PDF로 변환"
