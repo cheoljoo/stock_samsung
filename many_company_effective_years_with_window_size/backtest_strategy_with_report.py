@@ -429,11 +429,22 @@ def generate_analysis_report(strategy_results, buy_hold_final_value, buy_hold_re
     best_basic = max(basic_strategies, key=lambda x: x['return_rate']) if basic_strategies else None
     best_reverse = max(reverse_strategies, key=lambda x: x['return_rate']) if reverse_strategies else None
 
+    # Buy & Hold 구성 요소 계산
+    buy_hold_cash = 0
+    buy_hold_stock_value = buy_hold_final_value
+    
+    # 기본전략의 배당금을 Buy & Hold 배당금으로 사용 (동일한 기간, 동일한 배당)
+    if strategy_results and '기본전략_2년' in strategy_results:
+        buy_hold_cash = strategy_results['기본전략_2년'].get('cash', 0)
+        buy_hold_stock_value = buy_hold_final_value - buy_hold_cash
+
     report_content += f"""
 
 ### 📈 **Buy & Hold 참고**
 - **{company_name} Buy & Hold**: {buy_hold_return_rate:,.2f}%
 - **최종 자산**: {buy_hold_final_value:,.0f}원
+  - **주식자산**: {buy_hold_stock_value:,.0f}원
+  - **배당금**: {buy_hold_cash:,.0f}원
 
 ---
 
@@ -571,25 +582,33 @@ def generate_analysis_report(strategy_results, buy_hold_final_value, buy_hold_re
 
     report_content += f"""### 기본전략 상세 성과
 
-| 윈도우 | 수익률 | 최종자산 | 매매횟수 | Buy&Hold 대비 |
-|--------|--------|----------|----------|---------------|
+| 윈도우 | 수익률 | 최종자산 | 주식자산 | 배당금 | 매매횟수 | Buy&Hold 대비 |
+|--------|--------|----------|----------|--------|----------|---------------|
 """
 
     for strategy in basic_strategies:
         buy_hold_ratio = strategy['final_value'] / buy_hold_final_value
-        report_content += f"| {strategy['window']} | {strategy['return_rate']:,.2f}% | {strategy['final_value']:,.0f}원 | {strategy['trades']}회 | **{buy_hold_ratio:.2f}배** |\n"
+        strategy_name = f"기본전략_{strategy['window']}"
+        strategy_data = strategy_results.get(strategy_name, {})
+        stock_value = strategy_data.get('final_stock_value', strategy['final_value'])
+        cash_value = strategy_data.get('cash', 0)
+        report_content += f"| {strategy['window']} | {strategy['return_rate']:,.2f}% | {strategy['final_value']:,.0f}원 | {stock_value:,.0f}원 | {cash_value:,.0f}원 | {strategy['trades']}회 | **{buy_hold_ratio:.2f}배** |\n"
 
     report_content += f"""
 
 ### 반대전략 상세 성과
 
-| 윈도우 | 수익률 | 최종자산 | 매매횟수 | Buy&Hold 대비 |
-|--------|--------|----------|----------|---------------|
+| 윈도우 | 수익률 | 최종자산 | 주식자산 | 배당금 | 매매횟수 | Buy&Hold 대비 |
+|--------|--------|----------|----------|--------|----------|---------------|
 """
 
     for strategy in reverse_strategies:
         buy_hold_ratio = strategy['final_value'] / buy_hold_final_value
-        report_content += f"| {strategy['window']} | {strategy['return_rate']:,.2f}% | {strategy['final_value']:,.0f}원 | {strategy['trades']}회 | **{buy_hold_ratio:.2f}배** |\n"
+        strategy_name = f"반대전략_{strategy['window']}"
+        strategy_data = strategy_results.get(strategy_name, {})
+        stock_value = strategy_data.get('final_stock_value', strategy['final_value'])
+        cash_value = strategy_data.get('cash', 0)
+        report_content += f"| {strategy['window']} | {strategy['return_rate']:,.2f}% | {strategy['final_value']:,.0f}원 | {stock_value:,.0f}원 | {cash_value:,.0f}원 | {strategy['trades']}회 | **{buy_hold_ratio:.2f}배** |\n"
 
     report_content += f"""
 
@@ -778,10 +797,18 @@ def run_comprehensive_backtest(company_name):
             print(f"\n--- Buy & Hold 참고 ---")
             print(f"{company_name} 보통주 Buy & Hold: {return_without_dividends_buy_hold:,.2f}% (자산: {buy_hold_final_total_value:,.0f}원)")
 
+            # Buy&Hold 구성 요소 계산 (기본전략의 배당금을 사용)
+            basic_cash = 0
+            if strategy_results and '기본전략_2년' in strategy_results:
+                basic_cash = strategy_results['기본전략_2년'].get('cash', 0)
+            buy_hold_stock_value = buy_hold_final_total_value - basic_cash
+            
             # 결과 저장
             all_results[period] = {
                 'strategy_results': strategy_results,
                 'buy_hold_final_value': buy_hold_final_total_value,
+                'buy_hold_stock_value': buy_hold_stock_value,  # Buy&Hold 주식자산
+                'buy_hold_dividends': basic_cash,  # Buy&Hold 배당금
                 'buy_hold_return_rate': return_without_dividends_buy_hold,
                 'start_date': start_date_str,
                 'end_date': df_backtest.index[-1].strftime('%y-%m-%d'),
@@ -887,8 +914,8 @@ def generate_comprehensive_report(all_results, company_name):
 
 ## 📊 **기간별 최고 성과 전략 요약**
 
-| 기간 | 최고 성과 전략 | 수익률 | 최종 자산 | Buy&Hold 대비 |
-|------|---------------|--------|-----------|---------------|
+| 기간 | 최고 성과 전략 | 수익률 | 최종 자산 | Buy&Hold 수익률 | Buy&Hold 자산 | 대비 비율 |
+|------|---------------|--------|-----------|-----------------|------------|-----------|
 """
 
     # 각 기간별 최고 성과 전략 찾기
@@ -896,6 +923,7 @@ def generate_comprehensive_report(all_results, company_name):
     for period, result in all_results.items():
         strategy_results = result['strategy_results']
         buy_hold_return = result['buy_hold_return_rate']
+        buy_hold_final_value = result['buy_hold_final_value']
         
         best_strategy = None
         best_return = -float('inf')
@@ -912,8 +940,9 @@ def generate_comprehensive_report(all_results, company_name):
         best_strategies[period] = best_strategy
         
         if best_strategy:
-            buy_hold_ratio = best_strategy['return_rate'] / buy_hold_return
-            report_content += f"| {period} | {best_strategy['name']} | **{best_strategy['return_rate']:,.2f}%** | {best_strategy['final_value']:,.0f}원 | {buy_hold_ratio:.1f}배 |\n"
+            # Buy&Hold 대비 비율을 최종 자산 기준으로 계산
+            vs_buyhold_ratio = best_strategy['final_value'] / buy_hold_final_value if buy_hold_final_value > 0 else 0
+            report_content += f"| {period} | {best_strategy['name']} | **{best_strategy['return_rate']:,.2f}%** | {best_strategy['final_value']:,.0f}원 | {buy_hold_return:,.2f}% | {buy_hold_final_value:,.0f}원 | {vs_buyhold_ratio:.2f}배 |\n"
 
     report_content += f"""
 
@@ -933,8 +962,8 @@ def generate_comprehensive_report(all_results, company_name):
 **기간**: {result['start_date']} ~ {result['end_date']}  
 **초기 투자금**: {result['initial_value']:,.0f}원
 
-| 전략 | 수익률 | 최종 자산 | Buy&Hold 대비 |
-|------|--------|-----------|---------------|
+| 전략 | 수익률 | 최종 자산 | Buy&Hold 대비(자산) | Buy&Hold 대비(수익률) |
+|------|--------|-----------|-------------------|-------------------|
 """
         
         # 기본전략들
@@ -942,19 +971,29 @@ def generate_comprehensive_report(all_results, company_name):
             strategy_name = f"기본전략_{window_name}"
             if strategy_name in strategy_results:
                 result_data = strategy_results[strategy_name]
-                ratio = result_data['return_rate'] / buy_hold_return
-                report_content += f"| 기본전략 {window_name} | {result_data['return_rate']:,.2f}% | {result_data['final_value']:,.0f}원 | {ratio:.1f}배 |\n"
+                # 최종 자산 기준 대비 계산
+                asset_ratio = result_data['final_value'] / buy_hold_final if buy_hold_final > 0 else 0
+                # 수익률 기준 대비 계산
+                return_ratio = result_data['return_rate'] / buy_hold_return if buy_hold_return > 0 else 0
+                report_content += f"| 기본전략 {window_name} | {result_data['return_rate']:,.2f}% | {result_data['final_value']:,.0f}원 | {asset_ratio:.2f}배 | {return_ratio:.2f}배 |\n"
         
         # 반대전략들
         for window_name in ['2년', '3년', '5년']:
             strategy_name = f"반대전략_{window_name}"
             if strategy_name in strategy_results:
                 result_data = strategy_results[strategy_name]
-                ratio = result_data['return_rate'] / buy_hold_return
-                report_content += f"| 반대전략 {window_name} | {result_data['return_rate']:,.2f}% | {result_data['final_value']:,.0f}원 | {ratio:.1f}배 |\n"
+                # 최종 자산 기준 대비 계산
+                asset_ratio = result_data['final_value'] / buy_hold_final if buy_hold_final > 0 else 0
+                # 수익률 기준 대비 계산
+                return_ratio = result_data['return_rate'] / buy_hold_return if buy_hold_return > 0 else 0
+                report_content += f"| 반대전략 {window_name} | {result_data['return_rate']:,.2f}% | {result_data['final_value']:,.0f}원 | {asset_ratio:.2f}배 | {return_ratio:.2f}배 |\n"
         
         # Buy & Hold
-        report_content += f"| Buy & Hold | {buy_hold_return:,.2f}% | {buy_hold_final:,.0f}원 | 1.0배 |\n"
+        buy_hold_stock_value = result.get('buy_hold_stock_value', buy_hold_final)
+        buy_hold_dividends = result.get('buy_hold_dividends', 0)
+        report_content += f"| **Buy & Hold** | **{buy_hold_return:,.2f}%** | **{buy_hold_final:,.0f}원** | **1.00배** | **1.00배** |\n"
+        report_content += f"| └─ 주식자산 | - | {buy_hold_stock_value:,.0f}원 | - | - |\n"
+        report_content += f"| └─ 배당금 | - | {buy_hold_dividends:,.0f}원 | - | - |\n"
 
     report_content += f"""
 
@@ -990,6 +1029,36 @@ def generate_comprehensive_report(all_results, company_name):
 - **최고 성과 기간**: {best_overall[0]} ({best_overall[1]['return_rate']:,.2f}%)
 - **최저 성과 기간**: {worst_overall[0]} ({worst_overall[1]['return_rate']:,.2f}%)
 - **장기 vs 단기**: {"장기 투자가 더 유리" if best_overall[0] in ['20년', '30년'] else "단기 투자가 더 유리"}
+
+### 3. **Buy&Hold 대비 계산 방법 설명**
+
+**중요**: 본 분석에서는 Buy&Hold 대비를 두 가지 방식으로 계산합니다.
+
+#### 📊 **최종 자산 기준 대비 (Buy&Hold 대비(자산))**
+```
+대비 비율 = 전략의 최종 자산 ÷ Buy&Hold 최종 자산
+```
+- **의미**: 같은 초기 투자금으로 시작했을 때 최종적으로 얼마나 더 많은 자산을 확보했는지
+- **예시**: 전략 최종자산 1,200만원, Buy&Hold 최종자산 1,000만원 → 1.20배
+- **장점**: 실제 투자 결과를 직관적으로 비교 가능
+
+#### 📈 **수익률 기준 대비 (Buy&Hold 대비(수익률))**
+```
+대비 비율 = 전략의 수익률 ÷ Buy&Hold 수익률
+```
+- **의미**: 수익률의 상대적 성과를 비교
+- **예시**: 전략 수익률 20%, Buy&Hold 수익률 15% → 1.33배
+- **주의**: 음수 수익률이 포함될 경우 해석에 주의 필요
+
+#### ⚠️ **해석 시 주의사항**
+1. **수익률 대비가 1보다 작아도 최종 자산이 더 클 수 있음**
+   - Buy&Hold 수익률이 음수이고 전략 수익률이 양수인 경우
+   - 또는 두 수익률 모두 음수이지만 전략의 손실이 더 적은 경우
+
+2. **권장 해석 방법**
+   - **최종 자산 기준 대비**를 우선적으로 참고
+   - 수익률 대비는 보조 지표로 활용
+   - 절대적인 최종 자산 금액을 함께 고려
 
 ### 3. **투자 기간 권고사항**
 
