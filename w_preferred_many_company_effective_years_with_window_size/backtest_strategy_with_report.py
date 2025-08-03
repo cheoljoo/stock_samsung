@@ -352,12 +352,17 @@ def run_single_strategy(df_backtest, initial_stock_type, initial_shares, initial
     }
 
 def generate_analysis_report(strategy_results, buy_hold_final_value, buy_hold_return_rate, 
-                           start_date, end_date, initial_value, company_name, period_name="20년"):
+                           start_date, end_date, initial_value, company_name, period_name="20년",
+                           pref_buy_hold_final_value=None, pref_buy_hold_return_rate=None):
     """
     윈도우 크기별 전략 성과 분석 리포트를 마크다운 형식으로 생성합니다.
     
     Args:
         strategy_results: 전략별 결과
+        buy_hold_final_value: 보통주 Buy & Hold 최종 값
+        buy_hold_return_rate: 보통주 Buy & Hold 수익률
+        pref_buy_hold_final_value: 우선주 Buy & Hold 최종 값
+        pref_buy_hold_return_rate: 우선주 Buy & Hold 수익률
         buy_hold_final_value: Buy & Hold 최종 가치
         buy_hold_return_rate: Buy & Hold 수익률
         start_date: 시작 날짜
@@ -453,10 +458,17 @@ def generate_analysis_report(strategy_results, buy_hold_final_value, buy_hold_re
     report_content += f"""
 
 ### 📈 **Buy & Hold 참고**
-- **{company_name} Buy & Hold**: {buy_hold_return_rate:,.2f}%
+- **{company_name} 보통주 Buy & Hold**: {buy_hold_return_rate:,.2f}%
 - **최종 자산**: {buy_hold_final_value:,.0f}원
   - **주식자산**: {buy_hold_stock_value:,.0f}원
-  - **배당금**: {buy_hold_cash:,.0f}원
+  - **배당금**: {buy_hold_cash:,.0f}원"""
+
+    if pref_buy_hold_final_value and pref_buy_hold_return_rate:
+        report_content += f"""
+- **{company_name} 우선주 Buy & Hold**: {pref_buy_hold_return_rate:,.2f}%
+- **최종 자산**: {pref_buy_hold_final_value:,.0f}원"""
+
+    report_content += f"""
 
 ---
 
@@ -698,9 +710,9 @@ def run_comprehensive_backtest(company_name):
             print(f"데이터 기간: {df.index[0].strftime('%Y-%m-%d')} ~ {df.index[-1].strftime('%Y-%m-%d')}")
             print(f"총 데이터 포인트: {len(df)}")
 
-            # 초기 설정
+            # 초기 설정 (1억원 초기 자본)
+            initial_capital = 100_000_000  # 1억원
             initial_stock_type = f"{company_name} 보통주"  # 정확한 보통주 명칭 사용
-            initial_shares = 1000
             start_date_str = df.index[0].strftime('%y-%m-%d')
             
             # 백테스트 시작 날짜 설정 (첫 날 다음날부터)
@@ -711,6 +723,8 @@ def run_comprehensive_backtest(company_name):
                 continue
 
             first_day_data = df.iloc[0]
+            # 1억원으로 살 수 있는 주식 수 계산
+            initial_shares = int(initial_capital / first_day_data['Stock1_Open'])
             initial_value = initial_shares * first_day_data['Stock1_Open']
 
             print(f"초기 설정:")
@@ -748,10 +762,10 @@ def run_comprehensive_backtest(company_name):
                     True, reverse_strategy_name, window_suffix
                 )
 
-            # Buy & Hold 전략
+            # Buy & Hold 전략 (1억원 기준)
             print("\n" + "="*60)
             print(f"=== {company_name} 보통주 Buy & Hold 결과 ===")
-            buy_hold_initial_shares = 1000
+            buy_hold_initial_shares = int(initial_capital / first_day_data['Stock1_Open'])
             buy_hold_initial_value = buy_hold_initial_shares * first_day_data['Stock1_Open']
             
             buy_hold_portfolio_values = []
@@ -781,6 +795,41 @@ def run_comprehensive_backtest(company_name):
             print(f"최종 총 자산 가치 (주식 + 배당금): {buy_hold_final_total_value:,.2f}원")
             print(f"총 수익률 (배당금 제외): {return_without_dividends_buy_hold:,.2f}%")
 
+            # 우선주 Buy & Hold 전략 (1억원 기준)
+            print("\n" + "="*60)
+            print(f"=== {company_name} 우선주 Buy & Hold 결과 ===")
+            pref_buy_hold_initial_shares = int(initial_capital / first_day_data['Stock2_Open'])
+            pref_buy_hold_initial_value = pref_buy_hold_initial_shares * first_day_data['Stock2_Open']
+            
+            pref_buy_hold_portfolio_values = []
+            accumulated_pref_buy_hold_dividends = 0.0
+
+            # stock_diff.py에서 처리된 배당 데이터를 활용한 우선주 Buy & Hold 전략
+            print(f"📈 {company_name} 우선주 Buy & Hold 전략 (stock_diff.py 배당 데이터 활용)")
+            
+            for date, row in df_backtest.iterrows():
+                # 우선주 배당금은 보통주보다 높을 수 있음 (일반적으로 추가 배당 있음)
+                if 'Dividend_Amount_Raw' in row and row['Dividend_Amount_Raw'] > 0:
+                    # 우선주는 보통주 배당 + 추가 배당 (일반적으로 1% 정도 추가)
+                    pref_dividend_per_share = row['Dividend_Amount_Raw'] * 1.01  # 우선주 추가 배당 가정
+                    daily_pref_dividend = pref_dividend_per_share * pref_buy_hold_initial_shares
+                    accumulated_pref_buy_hold_dividends += daily_pref_dividend
+                    print(f"  📅 {date.strftime('%Y-%m-%d')}: 우선주 배당 {pref_dividend_per_share:,.0f}원/주 → 총 {daily_pref_dividend:,.0f}원")
+                
+                pref_buy_hold_daily_value = pref_buy_hold_initial_shares * row['Stock2_Close'] + accumulated_pref_buy_hold_dividends
+                pref_buy_hold_portfolio_values.append({'Date': date, 'Value': pref_buy_hold_daily_value})
+
+            pref_buy_hold_final_value = pref_buy_hold_initial_shares * df_backtest.iloc[-1]['Stock2_Close']
+            pref_buy_hold_final_total_value = pref_buy_hold_final_value + accumulated_pref_buy_hold_dividends
+            return_without_dividends_pref_buy_hold = ((pref_buy_hold_final_value - pref_buy_hold_initial_value) / pref_buy_hold_initial_value) * 100
+
+            print(f"초기 보유: {pref_buy_hold_initial_shares}주 {company_name} 우선주 (시가 기준 초기 가치: {pref_buy_hold_initial_value:,.2f}원)")
+            print(f"최종 보유: {pref_buy_hold_initial_shares}주 {company_name} 우선주")
+            print(f"최종 주식 가치: {pref_buy_hold_final_value:,.2f}원")
+            print(f"총 배당금 수령: {accumulated_pref_buy_hold_dividends:,.2f}원")
+            print(f"최종 총 자산 가치 (주식 + 배당금): {pref_buy_hold_final_total_value:,.2f}원")
+            print(f"총 수익률 (배당금 제외): {return_without_dividends_pref_buy_hold:,.2f}%")
+
             # 매매 기록 저장
             for strategy_name, result in strategy_results.items():
                 trading_df = pd.DataFrame(result['trading_log'])
@@ -808,6 +857,7 @@ def run_comprehensive_backtest(company_name):
             
             print(f"\n--- Buy & Hold 참고 ---")
             print(f"{company_name} 보통주 Buy & Hold: {return_without_dividends_buy_hold:,.2f}% (자산: {buy_hold_final_total_value:,.0f}원)")
+            print(f"{company_name} 우선주 Buy & Hold: {return_without_dividends_pref_buy_hold:,.2f}% (자산: {pref_buy_hold_final_total_value:,.0f}원)")
 
             # Buy&Hold 구성 요소 계산 (기본전략의 배당금을 사용)
             basic_cash = 0
@@ -822,18 +872,23 @@ def run_comprehensive_backtest(company_name):
                 'buy_hold_stock_value': buy_hold_stock_value,  # Buy&Hold 주식자산
                 'buy_hold_dividends': basic_cash,  # Buy&Hold 배당금
                 'buy_hold_return_rate': return_without_dividends_buy_hold,
+                'pref_buy_hold_final_value': pref_buy_hold_final_total_value,  # 우선주 Buy&Hold
+                'pref_buy_hold_return_rate': return_without_dividends_pref_buy_hold,  # 우선주 수익률
                 'start_date': start_date_str,
                 'end_date': df_backtest.index[-1].strftime('%y-%m-%d'),
                 'initial_value': initial_value,
-                'buy_hold_portfolio_values': buy_hold_portfolio_values
+                'initial_capital': initial_capital,  # 초기 자본 추가
+                'buy_hold_portfolio_values': buy_hold_portfolio_values,
+                'pref_buy_hold_portfolio_values': pref_buy_hold_portfolio_values  # 우선주 포트폴리오 값들
             }
 
             # 그래프 생성
-            generate_period_comparison_chart(period, strategy_results, buy_hold_portfolio_values, company_name)
+            generate_period_comparison_chart(period, strategy_results, buy_hold_portfolio_values, pref_buy_hold_portfolio_values, company_name)
 
             # 개별 기간 리포트 생성
             generate_analysis_report(strategy_results, buy_hold_final_total_value, return_without_dividends_buy_hold, 
-                                   start_date_str, df_backtest.index[-1].strftime('%y-%m-%d'), initial_value, company_name, period)
+                                   start_date_str, df_backtest.index[-1].strftime('%y-%m-%d'), initial_value, company_name, period,
+                                   pref_buy_hold_final_total_value, return_without_dividends_pref_buy_hold)
 
         except FileNotFoundError:
             print(f"오류: {json_file} 파일을 찾을 수 없습니다.")
@@ -847,14 +902,15 @@ def run_comprehensive_backtest(company_name):
         generate_comprehensive_report(all_results, company_name)
         generate_summary_report(all_results, company_name)
 
-def generate_period_comparison_chart(period, strategy_results, buy_hold_portfolio_values, company_name):
+def generate_period_comparison_chart(period, strategy_results, buy_hold_portfolio_values, pref_buy_hold_portfolio_values, company_name):
     """
     특정 기간에 대한 전략 비교 차트를 생성합니다.
     
     Args:
         period: 분석 기간
         strategy_results: 전략별 결과
-        buy_hold_portfolio_values: Buy & Hold 포트폴리오 값들
+        buy_hold_portfolio_values: 보통주 Buy & Hold 포트폴리오 값들
+        pref_buy_hold_portfolio_values: 우선주 Buy & Hold 포트폴리오 값들
         company_name (str): 분석 대상 회사명
     """
     safe_company_name = company_name.replace('/', '_').replace('\\', '_')
@@ -875,6 +931,11 @@ def generate_period_comparison_chart(period, strategy_results, buy_hold_portfoli
     monthly_buy_hold_df = buy_hold_df.resample('MS').first()
     ax1.plot(monthly_buy_hold_df.index, monthly_buy_hold_df['Value'], label=f'{company_name} 보통주 Buy & Hold', marker='x', markersize=3, linestyle='--')
     
+    # 우선주 Buy & Hold 추가
+    pref_buy_hold_df = pd.DataFrame(pref_buy_hold_portfolio_values).set_index('Date')
+    monthly_pref_buy_hold_df = pref_buy_hold_df.resample('MS').first()
+    ax1.plot(monthly_pref_buy_hold_df.index, monthly_pref_buy_hold_df['Value'], label=f'{company_name} 우선주 Buy & Hold', marker='o', markersize=3, linestyle=':')
+    
     ax1.set_ylabel('평가 금액 (원)')
     ax1.grid(True)
     ax1.legend()
@@ -890,7 +951,14 @@ def generate_period_comparison_chart(period, strategy_results, buy_hold_portfoli
             ax2.plot(monthly_df.index, monthly_df['Value'], label=f'{window_name} 윈도우', marker='s', markersize=3)
     
     # Buy & Hold 추가
+    buy_hold_df = pd.DataFrame(buy_hold_portfolio_values).set_index('Date')
+    monthly_buy_hold_df = buy_hold_df.resample('MS').first()
     ax2.plot(monthly_buy_hold_df.index, monthly_buy_hold_df['Value'], label=f'{company_name} 보통주 Buy & Hold', marker='x', markersize=3, linestyle='--')
+    
+    # 우선주 Buy & Hold 추가
+    pref_buy_hold_df = pd.DataFrame(pref_buy_hold_portfolio_values).set_index('Date')
+    monthly_pref_buy_hold_df = pref_buy_hold_df.resample('MS').first()
+    ax2.plot(monthly_pref_buy_hold_df.index, monthly_pref_buy_hold_df['Value'], label=f'{company_name} 우선주 Buy & Hold', marker='o', markersize=3, linestyle=':')
     
     ax2.set_xlabel('날짜')
     ax2.set_ylabel('평가 금액 (원)')
@@ -1640,9 +1708,14 @@ if __name__ == "__main__":
     print("="*80)
     print("우선주 차익거래 백테스트 시스템")
     print("="*80)
-    print("분석 기간: 3년, 5년, 10년, 20년, 30년")
-    print("윈도우 크기: 2년, 3년, 5년 슬라이딩 윈도우")
-    print("전략: 기본전략 vs 반대전략")
+    print("💰 초기 자본: 1억원 (100,000,000원)")
+    print("📊 분석 기간: 3년, 5년, 10년, 20년, 30년")
+    print("⏰ 윈도우 크기: 2년, 3년, 5년 슬라이딩 윈도우")
+    print("📈 전략:")
+    print("   - 기본전략 (25%↓→보통주, 75%↑→우선주)")
+    print("   - 반대전략 (25%↓→우선주, 75%↑→보통주)")
+    print("   - 보통주 Buy & Hold")
+    print("   - 우선주 Buy & Hold")
     print("="*80)
     
     if args.company:
