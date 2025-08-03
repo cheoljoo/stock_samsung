@@ -8,41 +8,71 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import os
 import sys
+import urllib.request
+import zipfile
 
 def install_nanum_fonts():
     """
-    나눔 폰트를 설치하는 함수 (Linux용)
+    나눔 폰트를 다운로드하여 matplotlib 폰트 디렉토리에 설치합니다.
     """
     try:
-        print("나눔 폰트 설치를 시도합니다...")
-        subprocess.run(['sudo', 'apt-get', 'update'], check=True)
-        subprocess.run(['sudo', 'apt-get', 'install', '-y', 'fonts-nanum*'], check=True)
+        # 폰트 다운로드 URL
+        font_zip_url = 'https://github.com/naver/nanumfont/archive/refs/heads/master.zip'
+        zip_path = 'nanumfont.zip'
+        
+        print(f"나눔 폰트 다운로드 중: {font_zip_url}")
+        urllib.request.urlretrieve(font_zip_url, zip_path)
+        
+        # matplotlib 폰트 디렉토리 찾기
+        font_dir = os.path.join(os.path.dirname(fm.__file__), 'mpl-data', 'fonts', 'ttf')
+        if not os.path.exists(font_dir):
+            font_dir = os.path.join(fm.get_data_path(), 'fonts', 'ttf') # Fallback
+        
+        print(f"폰트 설치 디렉토리: {font_dir}")
+        
+        # ZIP 파일 압축 해제 및 TTF 파일 복사
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            for filename in z.namelist():
+                if filename.endswith('.ttf'):
+                    font_path = os.path.join(font_dir, os.path.basename(filename))
+                    if not os.path.exists(font_path):
+                        with open(font_path, "wb") as f:
+                            f.write(z.read(filename))
+                        print(f"설치됨: {os.path.basename(filename)}")
+
+        # 임시 ZIP 파일 삭제
+        os.remove(zip_path)
+        
         print("나눔 폰트 설치가 완료되었습니다.")
         return True
-    except subprocess.CalledProcessError as e:
+        
+    except Exception as e:
         print(f"폰트 설치 중 오류가 발생했습니다: {e}")
         return False
 
 def clear_matplotlib_cache():
     """
-    matplotlib 폰트 캐시를 삭제하고 재구성
+    matplotlib 폰트 캐시를 삭제하고 재구성 (더 강력한 방식)
     """
     try:
-        cache_dir = fm.get_cachedir()
+        if hasattr(fm, 'get_cachedir'):
+            cache_dir = fm.get_cachedir()
+        else:
+            import matplotlib
+            cache_dir = matplotlib.get_cachedir()
+
         print(f"matplotlib 캐시 디렉토리: {cache_dir}")
         
-        # 캐시 파일들 삭제
-        import glob
-        cache_files = glob.glob(os.path.join(cache_dir, "*.cache"))
-        for cache_file in cache_files:
-            try:
-                os.remove(cache_file)
-                print(f"삭제됨: {cache_file}")
-            except:
-                pass
+        if os.path.exists(cache_dir):
+            import shutil
+            shutil.rmtree(cache_dir)
+            print(f"캐시 디렉토리 삭제됨: {cache_dir}")
+            os.makedirs(cache_dir, exist_ok=True) # 디렉토리 다시 생성
         
         # 폰트 리스트 재구성
-        fm._rebuild()
+        if hasattr(fm, '_rebuild'):
+            fm._rebuild()
+
         print("matplotlib 폰트 캐시가 재구성되었습니다.")
         return True
     except Exception as e:
