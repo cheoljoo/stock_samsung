@@ -307,7 +307,9 @@ def run_single_strategy(df_backtest, initial_stock_type, initial_shares, initial
         actual_initial_value = initial_shares * first_day_data['Stock2_Close']
     
     # 배당금을 제외한 수익률 계산 - 첫날 종가 기준으로 수정
-    return_without_dividends_strategy = ((final_total_value_strategy - cash - actual_initial_value) / actual_initial_value) * 100
+    # 초기 투자금 1억원 기준 수익률 계산
+    initial_capital = 100_000_000  # 1억원
+    return_without_dividends_strategy = ((final_total_value_strategy - cash - initial_capital) / initial_capital) * 100
 
     print(f"\n--- {strategy_name} 백테스트 결과 ---")
     print(f"백테스트 종료: {df_backtest.index[-1].strftime('%y-%m-%d')}")
@@ -786,7 +788,8 @@ def run_comprehensive_backtest(company_name):
 
             buy_hold_final_value = buy_hold_initial_shares * df_backtest.iloc[-1]['Stock1_Close']
             buy_hold_final_total_value = buy_hold_final_value + accumulated_buy_hold_dividends
-            return_without_dividends_buy_hold = ((buy_hold_final_value - buy_hold_initial_value) / buy_hold_initial_value) * 100
+            # 초기 투자금 1억원 기준 수익률 계산
+            return_without_dividends_buy_hold = ((buy_hold_final_value - initial_capital) / initial_capital) * 100
 
             print(f"초기 보유: {buy_hold_initial_shares}주 {company_name} 보통주 (시가 기준 초기 가치: {buy_hold_initial_value:,.2f}원)")
             print(f"최종 보유: {buy_hold_initial_shares}주 {company_name} 보통주")
@@ -821,7 +824,8 @@ def run_comprehensive_backtest(company_name):
 
             pref_buy_hold_final_value = pref_buy_hold_initial_shares * df_backtest.iloc[-1]['Stock2_Close']
             pref_buy_hold_final_total_value = pref_buy_hold_final_value + accumulated_pref_buy_hold_dividends
-            return_without_dividends_pref_buy_hold = ((pref_buy_hold_final_value - pref_buy_hold_initial_value) / pref_buy_hold_initial_value) * 100
+            # 초기 투자금 1억원 기준 수익률 계산
+            return_without_dividends_pref_buy_hold = ((pref_buy_hold_final_value - initial_capital) / initial_capital) * 100
 
             print(f"초기 보유: {pref_buy_hold_initial_shares}주 {company_name} 우선주 (시가 기준 초기 가치: {pref_buy_hold_initial_value:,.2f}원)")
             print(f"최종 보유: {pref_buy_hold_initial_shares}주 {company_name} 우선주")
@@ -1582,8 +1586,9 @@ def run_backtest(json_file_path, initial_stock_type, initial_shares, start_date_
 
         buy_hold_final_value = buy_hold_initial_shares * df_backtest.iloc[-1]['Stock1_Close']
         buy_hold_final_total_value = buy_hold_final_value + accumulated_buy_hold_dividends
-        # 배당금을 제외한 수익률 계산
-        return_without_dividends_buy_hold = ((buy_hold_final_value - buy_hold_initial_value) / buy_hold_initial_value) * 100
+        # 배당금을 제외한 수익률 계산 (초기 투자금 1억원 기준)
+        initial_capital = 100_000_000  # 1억원
+        return_without_dividends_buy_hold = ((buy_hold_final_value - initial_capital) / initial_capital) * 100
 
         print(f"초기 보유: {buy_hold_initial_shares}주 {common_stock_name} (시가 기준 초기 가치: {buy_hold_initial_value:,.2f}원)")
         print(f"최종 보유: {buy_hold_initial_shares}주 {common_stock_name}")
