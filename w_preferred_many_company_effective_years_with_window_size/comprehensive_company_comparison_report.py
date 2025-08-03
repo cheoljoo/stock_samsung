@@ -436,7 +436,7 @@ def generate_markdown_report():
 """
 
     # 파일 저장
-    report_filename = f'comprehensive_company_comparison_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.md'
+    report_filename = 'comprehensive_company_comparison_report.md'
     
     with open(report_filename, 'w', encoding='utf-8') as f:
         f.write(markdown_content)

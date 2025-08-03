@@ -239,7 +239,7 @@ def generate_company_comparison_report():
         print(f"{sector:^15} | 평균: {avg_mean:^8.2f} | 변동성: {avg_std:^8.2f} | 회사수: {company_count:^3}")
     
     # 6. 리포트 파일 생성
-    report_file = f'company_analysis_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.md'
+    report_file = 'company_analysis_report.md'
     
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write("# 📊 우선주 가격차이 비율 종합 분석 리포트\n\n")

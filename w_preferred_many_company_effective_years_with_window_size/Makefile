@@ -46,6 +46,12 @@ run-full-pipeline-company:
 	@echo "🎮 $(COMPANY) - 백테스팅 중..."
 	@$(MAKE) run-backtest-strategy-company COMPANY="$(COMPANY)"
 	@echo ""
+	@echo "🌐 모든 회사 - 종합 비교 분석 중..."
+	@$(MAKE) run-analyze-all
+	@echo ""
+	@echo "📋 종합 비교 리포트 생성 중..."
+	@$(MAKE) run-comprehensive-report
+	@echo ""
 	@echo "✅ $(COMPANY) 분석 완료!"
 
 # Full pipeline for all companies
@@ -56,17 +62,17 @@ run-full-pipeline-all:
 	@echo "📊 모든 회사 - 상세 분석 중..."
 	@$(MAKE) run-analyze-ratio
 	@echo ""
-	@echo "🌐 모든 회사 - 종합 비교 분석 중..."
-	@$(MAKE) run-analyze-all
-	@echo ""
-	@echo "� 배당률 비교 분석 중..."
+	@echo "💰 배당률 비교 분석 중..."
 	@$(MAKE) run-dividend-compare
-	@echo ""
-	@echo "�📋 종합 비교 리포트 생성 중..."
-	@$(MAKE) run-comprehensive-report
 	@echo ""
 	@echo "🎮 백테스팅 중..."
 	@$(MAKE) run-backtest-strategy
+	@echo ""
+	@echo "🌐 모든 회사 - 종합 비교 분석 중..."
+	@$(MAKE) run-analyze-all
+	@echo ""
+	@echo "📋 종합 비교 리포트 생성 중..."
+	@$(MAKE) run-comprehensive-report
 	@echo ""
 	@echo "✅ 모든 회사 분석 완료!"
 
