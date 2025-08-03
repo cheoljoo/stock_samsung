@@ -37,7 +37,7 @@ brew install font-nanum-gothic font-nanum-myeongjo
 ## Running the Analysis
 
 ### Option 1: Direct Installation
-- cd many_company_effective_years_with_window_size
+- cd w_preferred_many_company_effective_years_with_window_size
 - make
 - if you want run in interactive mode ,
   - make interactive
@@ -48,10 +48,10 @@ brew install font-nanum-gothic font-nanum-myeongjo
 ./docker-run.sh build
 
 # Run analysis in specific directory
-./docker-run.sh run many_company_effective_years_with_window_size
+./docker-run.sh run w_preferred_many_company_effective_years_with_window_size
 
 # Run US preferred stock analysis
-./docker-run.sh run many_company_effective_years_with_window_size
+./docker-run.sh run w_preferred_many_company_effective_years_with_window_size
 # Then inside container: uv run python us_diff.py --analyze
 
 # Execute additional commands in running container
@@ -67,15 +67,15 @@ brew install font-nanum-gothic font-nanum-myeongjo
 #### Docker Usage Examples:
 ```bash
 # Korean stock analysis
-./docker-run.sh run many_company_effective_years_with_window_size
+./docker-run.sh run w_preferred_many_company_effective_years_with_window_size
 # Inside container: make interactive
 
 # US preferred stock analysis  
-./docker-run.sh run many_company_effective_years_with_window_size
+./docker-run.sh run w_preferred_many_company_effective_years_with_window_size
 # Inside container: uv run python us_diff.py --analyze
 
 # Run specific company analysis
-./docker-run.sh run many_company_effective_years_with_window_size
+./docker-run.sh run w_preferred_many_company_effective_years_with_window_size
 # Inside container: uv run python stock_diff.py --company "삼성전자"
 ```
 
@@ -162,3 +162,4 @@ brew install font-nanum-gothic font-nanum-myeongjo
 - effective_years_with_window_size : report_backup 에 기존 내용들 저장 / effective하게 한번 계산된 사분위나 주식 가격을 다시 처리하지 않음. 파일에 저장했다가 불러옴
 - many_company_effective_years_with_window_size : 우선주가 있는 여러개의 회사들에 대해서 처리 , make interactive를 하면 선택해서 수행가능
   - uv run python us_diff.py
+- w_preferred_many_company_effective_years_with_window_size : 우선주 추가 및 초기 기본을 1000주에서 1억으로 변경 / 기본 report 수정 / 수익률은 주가에 대한 수익임.  총자산 = 주가자산 + 배당금

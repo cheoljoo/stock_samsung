@@ -4,23 +4,36 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import platform
 import matplotlib.font_manager as fm
+import os
 
-# OS에 맞게 한글 폰트 설정
-system_name = platform.system()
-if system_name == 'Windows':
-    plt.rcParams['font.family'] = 'Malgun Gothic'
-elif system_name == 'Darwin': # Mac OS
-    plt.rcParams['font.family'] = 'AppleGothic'
-elif system_name == 'Linux':
-    # 나눔고딕 폰트가 있는지 확인
-    if fm.findfont('NanumGothic', fontext='ttf'):
-        plt.rcParams['font.family'] = 'NanumGothic'
-    else:
-        print("나눔고딕 폰트가 설치되어 있지 않습니다. 'sudo apt-get install fonts-nanum*'으로 설치할 수 있습니다.")
-        # 설치되어 있지 않으면 다른 사용 가능한 폰트를 사���하거나, 경고 메시지를 출력합니다.
-        # 여기서는 sans-serif를 기본값으로 사용합니다.
+# 나눔고딕 폰트 설정 (경고 메시지 제거)
+nanum_font_path = '/usr/share/fonts/truetype/nanum/NanumGothic.ttf'
+
+# 폰트 경로가 존재하는지 확인하고 설정
+if os.path.exists(nanum_font_path):
+    print(f"✅ 나눔고딕 폰트 발견: {nanum_font_path}")
+    # 폰트를 matplotlib에 등록
+    font_prop = fm.FontProperties(fname=nanum_font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+    print(f"✅ 나눔고딕 폰트 설정 완료: {font_prop.get_name()}")
+else:
+    print("⚠️ 나눔고딕 폰트를 찾을 수 없어 기본 폰트를 사용합니다.")
+    # OS별 기본 한글 폰트 설정
+    system_name = platform.system()
+    if system_name == 'Windows':
+        plt.rcParams['font.family'] = 'Malgun Gothic'
+    elif system_name == 'Darwin':  # Mac OS
+        plt.rcParams['font.family'] = 'AppleGothic'
+    else:  # Linux 기본
         plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['axes.unicode_minus'] = False # 마이너스 폰트 깨짐 방지
+
+plt.rcParams['axes.unicode_minus'] = False  # 마이너스 폰트 깨짐 방지
+
+# matplotlib 폰트 캐시 새로고침 (경고 메시지 제거)
+try:
+    fm._get_font.cache_clear()
+except AttributeError:
+    pass  # 오래된 matplotlib 버전에서는 이 메서드가 없을 수 있음
 
 def analyze_price_diff_ratio(json_file_path, company_name="삼성전자"):
     """
