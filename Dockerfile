@@ -31,8 +31,8 @@ RUN pip install --upgrade pip
 RUN pip install pipx yfinance pandas openpyxl numpy seaborn matplotlib openai python-dotenv googletrans uv
 
 # Install uv (Python package manager)
-#RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-#ENV PATH="/root/.cargo/bin:$PATH"
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
 
 # Create user with same UID/GID as host user (will be overridden at build time)
 ARG USER_ID=1000
