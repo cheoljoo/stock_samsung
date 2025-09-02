@@ -17,19 +17,49 @@ import matplotlib.font_manager as fm
 import warnings
 warnings.filterwarnings('ignore')
 
-# Font setup for Korean text
-system_name = platform.system()
-if system_name == 'Windows':
-    plt.rcParams['font.family'] = 'Malgun Gothic'
-elif system_name == 'Darwin':
-    plt.rcParams['font.family'] = 'AppleGothic'
-elif system_name == 'Linux':
-    if fm.findfont('NanumGothic', fontext='ttf'):
-        plt.rcParams['font.family'] = 'NanumGothic'
+# Font setup for Korean text - Enhanced version
+def setup_korean_font():
+    """Setup Korean fonts with fallback options"""
+    system_name = platform.system()
+    
+    # Get available fonts
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    
+    # Korean font candidates by system
+    if system_name == 'Windows':
+        font_candidates = ['Malgun Gothic', 'NanumGothic', 'Gulim', 'Dotum']
+    elif system_name == 'Darwin':
+        font_candidates = ['AppleGothic', 'AppleSDGothicNeo', 'NanumGothic']
+    else:  # Linux and others
+        font_candidates = ['NanumGothic', 'NanumBarunGothic', 'DejaVu Sans']
+    
+    # Find first available Korean font
+    selected_font = None
+    for font in font_candidates:
+        if font in available_fonts:
+            selected_font = font
+            break
+        # Case-insensitive search
+        for available in available_fonts:
+            if font.lower() in available.lower():
+                selected_font = available
+                break
+        if selected_font:
+            break
+    
+    # Set font
+    if selected_font:
+        plt.rcParams['font.family'] = selected_font
+        print(f"✅ Korean font set: {selected_font}")
     else:
-        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.family'] = ['sans-serif']
+        print("⚠️  No Korean font found. Korean text may display as boxes.")
+    
+    plt.rcParams['axes.unicode_minus'] = False
+    return selected_font is not None
 
-plt.rcParams['axes.unicode_minus'] = False
+# Initialize Korean font
+setup_korean_font()
 
 # Extended Korean companies database
 KOREAN_DIVIDEND_COMPANIES = {
