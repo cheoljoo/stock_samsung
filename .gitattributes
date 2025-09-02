@@ -1,0 +1,22 @@
+# Documentation and Wiki Git Configuration
+
+# Include all documentation files
+docs/
+docs/wiki/
+docs/wiki/*.md
+
+# Include project documentation
+dividend-in-korea/README_KOREAN.md
+dividend-in-korea/*.md
+
+# Include design documents  
+dividend-in-korea/dividend-analysis.md
+
+# Include test documentation
+dividend-in-korea/test_results.json
+
+# Exclude temporary files
+!**/*.tmp
+!**/*.cache
+!**/.pytest_cache
+!**/__pycache__
